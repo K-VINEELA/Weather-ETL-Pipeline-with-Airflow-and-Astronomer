@@ -74,3 +74,93 @@ Install the Python dependencies listed in `requirements.txt`:
 pip install -r requirements.txt
 ```
 
+### Step 3: Configure Airflow Connections
+
+Before running the project, you'll need to configure the Airflow connections.
+
+1. Open the Airflow UI at [http://localhost:8080/](http://localhost:8080/) (default Airflow web UI port).
+2. Log in using the default credentials:
+   - **Username**: `admin`
+   - **Password**: `admin`
+3. Navigate to **Admin > Connections** and create the following connections:
+   - **open_meteo_api**: HTTP connection for accessing the Open-Meteo API.
+     - Set the connection type as **HTTP** and input the base URL for the Open-Meteo API.
+   - **postgres_default**: PostgreSQL connection for storing weather data.
+     - Set the connection type as **Postgres** and provide the necessary connection details such as:
+       - **Database host**
+       - **Port**
+       - **Username**
+       - **Password**
+## ⚡ **Running the Project Locally**
+
+After setting up the Airflow connections, you're ready to start the project locally.
+
+### Step 1: Start the Airflow Environment
+
+Use the following command to start the Airflow environment using Docker and Astronomer CLI:
+
+```bash
+astro dev start
+```
+
+This command will start up the following containers:
+
+- **Postgres**: Airflow's metadata database.
+- **Webserver**: The Airflow UI for monitoring DAGs and tasks.
+- **Scheduler**: Responsible for running the tasks defined in your DAG.
+- **Triggerer**: Manages the triggering of deferred tasks.
+
+---
+
+### Step 2: Monitor the ETL Process
+
+Once the environment is up, open the Airflow UI by navigating to [http://localhost:8080/](http://localhost:8080/) in your browser. You will be able to see the `weather_etl_pipeline` DAG listed under the **DAGs** tab.
+
+You can trigger the DAG manually by clicking the play button next to the DAG name, or let it run according to the defined schedule (`@daily`).
+
+The pipeline will fetch weather data from the Open-Meteo API, transform the data, and load it into the PostgreSQL database.
+
+---
+
+### Step 3: Verify Data in PostgreSQL
+
+To verify the data, you can use any PostgreSQL client like **DBeaver** to connect to the database and check the data in the `weather_data` table. The table will contain the following columns:
+
+- `latitude`
+- `longitude`
+- `temperature`
+- `windspeed`
+- `winddirection`
+- `weathercode`
+- `timestamp` (auto-generated)
+
+---
+
+## 🧑‍💻 **How It Works**
+
+This ETL pipeline uses Apache Airflow to automate the data extraction, transformation, and loading process.
+
+### **Extract:**
+The `extract_weather_data` task fetches current weather data from the Open-Meteo API using Airflow's `HttpHook`. The API provides temperature, wind speed, and other weather-related data for a given latitude and longitude.
+
+### **Transform:**
+The `transform_weather_data` task processes the raw API data and transforms it into a structured format suitable for insertion into a PostgreSQL database.
+
+### **Load:**
+The `load_weather_data` task inserts the transformed data into the `weather_data` table in PostgreSQL using Airflow's `PostgresHook`.
+
+This entire workflow is orchestrated by the `weather_etl_pipeline` DAG, which runs on a daily schedule (`@daily`).
+
+---
+
+## 🔧 **Customization**
+
+This project is highly customizable. You can adjust the following aspects based on your needs:
+
+- **Latitude and Longitude**: You can change the values of `LATITUDE` and `LONGITUDE` to fetch weather data for any location.
+- **Schedule**: Modify the `schedule_interval` in the DAG definition to control how often the pipeline runs (e.g., `@hourly`, `@weekly`).
+- **API Integration**: You can replace the Open-Meteo API with other weather data sources by adjusting the `HttpHook` configuration and the API endpoint.
+
+
+
+
